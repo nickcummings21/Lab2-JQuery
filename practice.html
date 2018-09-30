@@ -16,8 +16,12 @@
                 $( "#cityField" ).keyup(function() {
                     
                     var input = $("#cityField").val();
-                    if (input === "") $("#txtHint").html("");
+                    if (input === "") {
+                        $("#txtHint").html("");
+                        return;
+                    }
                     
+                    input = input.substr(0,1).toUpperCase() + input.substr(1);
                     var query = "http://bioresearch.byu.edu/cs260/jquery/getcity.cgi?q=" + input;
                     
                     $.getJSON(query, function(data) {
@@ -62,7 +66,7 @@
                 event.preventDefault();
                 
                 var city = $("#cityField").val();
-                console.log(city);
+                city = city.substr(0,1).toUpperCase() + city.substr(1);
                 
                 var cityInfo = $('#cityInfo');
                 var info = "Name:\t" + city + 
