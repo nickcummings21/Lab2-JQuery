@@ -1,0 +1,202 @@
+<html>
+    <head>
+        
+        <title>City Finder</title>
+        <script
+            src="http://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous">
+        </script>
+        
+        <script type="text/javascript">
+        
+            var cityPops = {};
+        
+            $(document).ready(function() {
+                $( "#cityField" ).keyup(function() {
+                    
+                    var input = $("#cityField").val();
+                    if (input === "") $("#txtHint").html("");
+                    
+                    var query = "http://bioresearch.byu.edu/cs260/jquery/getcity.cgi?q=" + input;
+                    
+                    $.getJSON(query, function(data) {
+                        
+                        var everything;
+                        everything = "<ul>";
+                        $.each(data, function(i,item) {
+                            
+                            everything += "<li> "+data[i].city;
+                        });
+                        everything += "</ul>";
+                        
+                        $("#txtHint").html(everything);
+                    })
+                    .done(function() { console.log('getJSON request succeeded!'); })
+                    .fail(function(jqXHR, textStatus, errorThrown) { 
+                        console.log('getJSON request failed! ' + textStatus); 
+                        console.log("incoming "+jqXHR.responseText);
+                    })
+                    .always(function() { console.log('getJSON request ended!'); });
+                });
+                
+                getPopulations();
+            });
+            
+            function getPopulations() {
+                
+                var query = "https://opendata.utah.gov/resource/dhiv-48xc.json";
+                $.getJSON(query, function(data) {
+                    
+                    for (var i = 0; i < data.length; i++) {
+                        var cityName = data[i].name;
+                        cityName = cityName.substr(0,cityName.lastIndexOf(" "));
+                        var pop = data[i].popestimate2012;
+                        
+                        cityPops[cityName] = pop;
+                    }
+                });
+            }
+            
+            function submitCity(event) {
+                event.preventDefault();
+                
+                var city = $("#cityField").val();
+                console.log(city);
+                
+                var cityInfo = $('#cityInfo');
+                var info = "Name:\t" + city + 
+                            "<br>Population (est. 2012): " + 
+                            cityPops[city];
+                cityInfo.html(info);
+                
+                getWeather(city);
+            }
+            
+            function getWeather(city) {
+                
+                var query = "http://api.openweathermap.org/data/2.5/weather?q=";
+                query += city;
+                query += "&APPID=dd37d5c9d2375694ebf89e24b4b5a5d4";
+                query += "&units=imperial";
+                
+                $.getJSON(query, function(data) {
+                    
+                    var degrees = "&#8457";
+                    var currTemp = data.main.temp;
+                    var humidity = data.main.humidity;
+                    var windSpeed = data.wind.speed;
+                    
+                    var weatherEl = $("#weather");
+                    var html = "<p>Temperature:\t\t" + 
+                                currTemp + degrees +
+                                "<br/>Humidity:\t\t\t" + humidity + "%" +
+                                "<br/>Wind Speed:\t\t\t" + windSpeed + " mph" +
+                                "</p>";
+                    weatherEl.html(html);
+                });
+            }
+            
+            function getStack(event) {
+                event.preventDefault();
+                
+                var input = $("#stackInput").val();
+                if (input === "") return;
+                
+                var query = "https://api.stackexchange.com/2.2/search?order=desc&sort=activity&intitle=" + 
+                input +
+                "&site=stackoverflow";
+                
+                $.getJSON(query, function(data) {
+                    
+                    console.log(data.items[0]);
+                
+                    var html = "";
+                    for (var i = 0; i < data.items.length; i++) {
+                        
+                        var result = data.items[i];
+                        
+                        html += "<li>Question:\t" + result.title + 
+                        "<br>Owner:\t\t" + result.owner.display_name +
+                        "<br>Link:\t\t<a href='" + result.link + 
+                        "' target='_blank'>" + result.link + "</a>" +
+                        "</li>";
+                        console.log(html);
+                    }
+                    
+                    $("#stackResults").html(html);
+                });
+            }
+        </script>
+        
+    </head>
+    <body>
+        
+        <!--<nav>Helo</nav>-->
+        
+        <div class="stylin">
+            
+            <h3>Simple Utah Weather Checker</h3>
+            
+            <form autocomplete="off">
+                Enter a Utah City: 
+                <input type="text" id="cityField" value="">
+                <input id="weatherButton" type="submit" 
+                        value="Submit" onclick="submitCity(event)"><br>
+                Suggestion: <span id="txtHint"></span>
+            </form>
+            
+            <h4>City</h4>
+            <div id="cityInfo">(no city selected)</div>
+            
+            <h4>Current Weather</h4>
+            <div id="weather">(no city selected)</div>
+        
+        </div>
+        
+        <div class="stylin">
+            
+            <h3>What's on StackExchange.com?</h3>
+            
+            <form autocomplete="off">
+                Enter a Keyword: 
+                <input type="text" id="stackInput" value="">
+                <input id="stackButton" type="submit" 
+                        value="Submit" onclick="getStack(event)"><br>
+            </form>
+            
+            <ul id="stackResults"></ul>
+            
+        </div>
+    
+        <style type="text/css">
+            .stylin {
+                background: lightgray;
+                border-radius: 5px;
+                margin: 15px;
+                padding: 15px;
+                font-family: "calibri", "sans-serif";
+            }
+            
+            #weatherbutton {
+                border-radius: 3px;
+                padding: 5px;
+                /*background-color: red;*/
+            }
+            
+            #stackbutton {
+                border-radius: 3px;
+                padding: 5px;
+            }
+            
+            #weather {
+                white-space: pre;
+            }
+            
+            #stackResults {
+                white-space: pre;
+            }
+            
+        </style>
+    </body>
+</html>
